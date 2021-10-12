@@ -31,9 +31,9 @@ class StartFragment : Fragment(), OnMapReadyCallback {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var parkingLocation = Location(LocationManager.NETWORK_PROVIDER)
     private lateinit var map: GoogleMap
-
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
+    private var distance = 0
 
     @SuppressLint("MissingPermission")
     val singlePermission =
@@ -57,7 +57,7 @@ class StartFragment : Fragment(), OnMapReadyCallback {
 
         locationRequest = LocationRequest.create().apply {
             interval = 3000
-            fastestInterval = 1000
+            fastestInterval = 2000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             maxWaitTime = 5000
         }
@@ -66,8 +66,12 @@ class StartFragment : Fragment(), OnMapReadyCallback {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
                 for (location in locationResult.locations){
-                    // Update UI with location data
-                    // ...
+                    mCurrentLocation = location
+                    binding?.locationView?.text = getString(R.string.current_location_message,
+                        location?.latitude.toString(),
+                        location?.longitude.toString())
+                    distance = location.distanceTo(parkingLocation).toInt()
+                    binding?.distanceView?.text = distance.toString()
                     Log.e("!@#", locationResult.toString())
                 }
             }
@@ -97,14 +101,17 @@ class StartFragment : Fragment(), OnMapReadyCallback {
         }
 
         binding?.btnSaveLocation?.setOnClickListener {
-            map.addMarker(
-                MarkerOptions()
-                    .position(LatLng(parkingLocation.latitude, parkingLocation.longitude))
-                    .title(parkingLocation.latitude.toString() + " " + parkingLocation.longitude.toString())
-            )
+            map.clear()
             saveParkingLocation()
+            map.addParkingMarker(parkingLocation.latitude,parkingLocation.longitude)
         }
+
+        binding?.btnResetLocation?.setOnClickListener {
+            map.clear()
+        }
+
     }
+
 
     @SuppressLint("MissingPermission")
     private fun showUserLocationOnMap() {
@@ -120,12 +127,6 @@ class StartFragment : Fragment(), OnMapReadyCallback {
 
     }
 
-    override fun onResume() {
-        super.onResume()
-//        if (requestingLocationUpdates) startLocationUpdates()
-        startLocationUpdates()
-    }
-
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
         fusedLocationClient.requestLocationUpdates(locationRequest,
@@ -133,39 +134,27 @@ class StartFragment : Fragment(), OnMapReadyCallback {
             Looper.getMainLooper())
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        binding = null
-    }
-
     override fun onMapReady(googleMap: GoogleMap) {
         readParkingLocation()
+        map = googleMap
         if (parkingLocation.latitude != 0.0 && parkingLocation.longitude != 0.0) {
-            googleMap.addMarker(
-                MarkerOptions()
-                    .position(LatLng(parkingLocation.latitude, parkingLocation.longitude))
-                    .title(parkingLocation.latitude.toString() + " " + parkingLocation.longitude.toString())
-            )
-
-            googleMap.moveCamera(CameraUpdateFactory.newLatLng(LatLng(parkingLocation.latitude, parkingLocation.longitude)))
+            googleMap.addParkingMarker(parkingLocation.latitude, parkingLocation.longitude)
+        } else {
+            map.clear()
         }
 
     }
 
     private fun saveParkingLocation() {
+        parkingLocation.latitude = mCurrentLocation?.latitude ?: 0.0
+        parkingLocation.longitude = mCurrentLocation?.longitude ?: 0.0
+
         activity?.getSharedPreferences("data", Context.MODE_PRIVATE)
             ?.edit()
-            ?.apply { mCurrentLocation?.latitude?.toFloat()?.let {
-                putFloat("KEY_PARKING_LATITUDE",
-                    it
-                )
-            } }
-            ?.apply { mCurrentLocation?.longitude?.toFloat()?.let {
-                putFloat("KEY_PARKING_LONGITUDE",
-                    it
-                )
-            } }
+            ?.apply { putFloat("KEY_PARKING_LATITUDE", parkingLocation.latitude.toFloat()) }
+            ?.apply { putFloat("KEY_PARKING_LONGITUDE", parkingLocation.longitude.toFloat()) }
             ?.apply()
+        Log.e("!@#", "Parking location is: $parkingLocation")
     }
 
     private fun readParkingLocation() {
@@ -181,12 +170,35 @@ class StartFragment : Fragment(), OnMapReadyCallback {
 
     }
 
+    fun GoogleMap.addParkingMarker(lat: Double, lon: Double) {
+        val parkingPoint = LatLng(lat, lat)
+        this.addMarker(
+            MarkerOptions()
+                .position(parkingPoint)
+                .title("Your car is here")
+//                    .draggable(true)
+        )
+        val yourLocation = CameraUpdateFactory.newLatLngZoom(parkingPoint, this.maxZoomLevel)
+        map.animateCamera(yourLocation)
+    }
+
     override fun onPause() {
         super.onPause()
         stopLocationUpdates()
     }
 
+    override fun onResume() {
+        super.onResume()
+        startLocationUpdates()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        binding = null
+    }
+
     private fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
+
 }
