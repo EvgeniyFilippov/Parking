@@ -8,11 +8,11 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.fragment.app.Fragment
 import by.filipau.parking.R
 import by.filipau.parking.databinding.FragmentStartBinding
 import com.google.android.gms.location.*
@@ -22,6 +22,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PolylineOptions
 
 class StartFragment : Fragment(), OnMapReadyCallback {
 
@@ -35,8 +36,8 @@ class StartFragment : Fragment(), OnMapReadyCallback {
     private lateinit var locationCallback: LocationCallback
     private var distance = 0
 
-    @SuppressLint("MissingPermission")
-    val singlePermission =
+
+    private val singlePermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             when {
                 granted -> {
@@ -60,18 +61,28 @@ class StartFragment : Fragment(), OnMapReadyCallback {
             fastestInterval = 2000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             maxWaitTime = 5000
+            smallestDisplacement = 5F
         }
+
 
       locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
                 for (location in locationResult.locations){
                     mCurrentLocation = location
+
                     binding?.locationView?.text = getString(R.string.current_location_message,
                         location?.latitude.toString(),
                         location?.longitude.toString())
                     distance = location.distanceTo(parkingLocation).toInt()
                     binding?.distanceView?.text = distance.toString()
+
+//                    val polylineOptions = PolylineOptions()
+//                        .add(LatLng(location.latitude, location.longitude))
+//                        .add(LatLng(parkingLocation.latitude, parkingLocation.longitude))
+//
+//                    map.addPolyline(polylineOptions)
+
                     Log.e("!@#", locationResult.toString())
                 }
             }
@@ -171,7 +182,7 @@ class StartFragment : Fragment(), OnMapReadyCallback {
     }
 
     fun GoogleMap.addParkingMarker(lat: Double, lon: Double) {
-        val parkingPoint = LatLng(lat, lat)
+        val parkingPoint = LatLng(lat, lon)
         this.addMarker(
             MarkerOptions()
                 .position(parkingPoint)
