@@ -23,6 +23,16 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
+import android.widget.TextView
+import android.text.Spanned
+import android.graphics.Typeface
+import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
+import android.text.SpannableString
+import android.text.Spannable
+
+
+
 
 class StartFragment : Fragment(), OnMapReadyCallback {
 
@@ -71,9 +81,19 @@ class StartFragment : Fragment(), OnMapReadyCallback {
                 for (location in locationResult.locations){
                     mCurrentLocation = location
 
-                    binding?.locationView?.text = getString(R.string.current_location_message,
-                        location?.latitude.toString(),
-                        location?.longitude.toString())
+
+                    val text: Spannable = SpannableString("This is underline and bold text.")
+                    text.setSpan(UnderlineSpan(), 8, 17, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    text.setSpan(StyleSpan(Typeface.BOLD), 22, 26, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+//                    val textView = findViewById(R.id.text) as TextView
+//                    textView.text = text
+
+
+                    binding?.locationView?.text = text
+//                    binding?.locationView?.text = getString(R.string.current_location_message,
+//                        location?.latitude.toString(),
+//                        location?.longitude.toString())
                     distance = location.distanceTo(parkingLocation).toInt()
                     binding?.distanceView?.text = distance.toString()
 
