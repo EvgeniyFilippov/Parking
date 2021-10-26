@@ -5,26 +5,18 @@ import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
-import android.os.SystemClock
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.WorkRequest
 import by.filipau.parking.R
 import by.filipau.parking.databinding.FragmentStartBinding
-import by.filipau.parking.workManager.AlarmReceiver
-import by.filipau.parking.workManager.ParkingWorker
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -32,8 +24,6 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import java.util.*
-import java.util.concurrent.TimeUnit
 
 open class StartFragment : Fragment(), OnMapReadyCallback {
 
@@ -46,9 +36,6 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private var distance = 0
-    private var alarmMgr: AlarmManager? = null
-    private lateinit var alarmIntent: PendingIntent
-
 
     private val singlePermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -74,13 +61,15 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
             fastestInterval = 20000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             maxWaitTime = 50000
-//            smallestDisplacement = 5F
+            smallestDisplacement = 5f
         }
 
+        //location callback
       locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
                 for (location in locationResult.locations){
+                    Log.e("!@#","locationCallback")
                     mCurrentLocation = location
 
                     binding?.locationView?.text = getString(R.string.current_location_message,
@@ -93,42 +82,6 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
                 }
             }
         }
-
-
-        //WORKMANAGER
-        val oneTimeWorkerRequest: WorkRequest =
-            OneTimeWorkRequestBuilder<ParkingWorker>()
-                .build()
-
-        val periodicWorkRequest: WorkRequest =
-            PeriodicWorkRequestBuilder<ParkingWorker>(15, TimeUnit.SECONDS)
-                .build()
-
-        context?.let {
-            WorkManager
-                .getInstance(it)
-                .enqueue(oneTimeWorkerRequest)
-        }
-
-        context?.let {
-            WorkManager
-                .getInstance(it)
-                .enqueue(periodicWorkRequest)
-        }
-
-
-        //ALARMMANAGER
-        alarmMgr = context?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
-            PendingIntent.getBroadcast(context, 0, intent, 0)
-        }
-
-        alarmMgr?.setRepeating(
-            AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            SystemClock.elapsedRealtime() + 10000,
-            60000,
-            alarmIntent
-        )
 
     }
 
@@ -180,8 +133,10 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
 
     }
 
+    //get location
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
+        Log.e("!@#","startLocationUpdates method")
         fusedLocationClient.requestLocationUpdates(locationRequest,
             locationCallback,
             Looper.getMainLooper())
