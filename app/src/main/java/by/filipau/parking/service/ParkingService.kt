@@ -1,10 +1,22 @@
 package by.filipau.parking.service
 
-import android.app.Service
+import android.annotation.SuppressLint
+import android.app.*
 import android.content.Intent
+import android.location.Location
+import android.os.Build
 import android.os.IBinder
+import android.os.Looper
+import android.util.Log
+import by.filipau.parking.R
+import by.filipau.parking.ui.StartFragment
 
 class ParkingService : Service() {
+
+    companion object {
+        const val CHANNEL_ID = "444"
+        const val ONGOING_NOTIFICATION_ID = 333
+    }
 
     /** The system calls this method when another component wants to bind with the service by calling bindService().
     If you implement this method, you must provide an interface that clients use to communicate
@@ -20,6 +32,35 @@ class ParkingService : Service() {
     остановить службу, когда она завершит работу, путем вызова stopSelf() или stopService()
     (если Вы решили использовать привязку - binding, то Вам не нужно реализовывать этот метод).*/
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return super.onStartCommand(intent, flags, startId)
+
+       val pendingIntent: PendingIntent =
+           Intent(this, StartFragment::class.java).let { notificationIntent ->
+               PendingIntent.getActivity(this, 0, notificationIntent, 0)
+           }
+
+       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+           val name = "channel name"
+           val importance = NotificationManager.IMPORTANCE_MIN
+           val mChannel =
+               NotificationChannel(CHANNEL_ID, name, importance)
+
+           val notificationManager = getSystemService(
+               NOTIFICATION_SERVICE
+           ) as NotificationManager
+           notificationManager.createNotificationChannel(mChannel)
+       }
+
+       val notification: Notification = Notification.Builder(this, CHANNEL_ID)
+           .setContentTitle("title")
+           .setContentText("message")
+           .setSmallIcon(R.drawable.ic_baseline_directions_car_24)
+           .setContentIntent(pendingIntent)
+           .setTicker("Ticker")
+           .build()
+
+// Notification ID cannot be 0.
+       startForeground(ONGOING_NOTIFICATION_ID, notification)
+       return super.onStartCommand(intent, flags, startId)
     }
+
 }

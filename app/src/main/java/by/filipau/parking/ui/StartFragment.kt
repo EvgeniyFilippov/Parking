@@ -3,8 +3,10 @@ package by.filipau.parking.ui
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.app.AlarmManager
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
@@ -17,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import by.filipau.parking.R
 import by.filipau.parking.databinding.FragmentStartBinding
+import by.filipau.parking.service.ParkingService
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -54,14 +57,15 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
         locationRequest = LocationRequest.create().apply {
-            interval = 30000
-            fastestInterval = 20000
+            interval = 3000
+            fastestInterval = 2000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            maxWaitTime = 50000
-            smallestDisplacement = 5f
+            maxWaitTime = 5000
+            smallestDisplacement = 0f
         }
 
         //location callback
@@ -69,7 +73,7 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
                 for (location in locationResult.locations){
-                    Log.e("!@#","locationCallback")
+                    Log.e("!@#","locationCallback." + Thread.currentThread().name)
                     mCurrentLocation = location
 
                     binding?.locationView?.text = getString(R.string.current_location_message,
@@ -115,6 +119,8 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
         binding?.btnResetLocation?.setOnClickListener {
             map.clear()
         }
+
+        this.context?.startForegroundService(Intent(this.context, ParkingService::class.java))
 
     }
 
