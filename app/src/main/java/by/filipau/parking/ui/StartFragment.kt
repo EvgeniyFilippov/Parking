@@ -6,6 +6,7 @@ import android.content.Context
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,6 +16,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import by.filipau.parking.R
 import by.filipau.parking.databinding.FragmentStartBinding
+import by.filipau.parking.ui.handler.MyWorkerThread
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -22,7 +24,9 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PolylineOptions
+import android.widget.Toast
+import java.util.concurrent.TimeUnit
+
 
 class StartFragment : Fragment(), OnMapReadyCallback {
 
@@ -35,6 +39,9 @@ class StartFragment : Fragment(), OnMapReadyCallback {
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private var distance = 0
+
+    private val mUiHandler = Handler()
+    private lateinit var mWorkerThread: MyWorkerThread
 
 
     private val singlePermission =
@@ -87,6 +94,48 @@ class StartFragment : Fragment(), OnMapReadyCallback {
                 }
             }
         }
+/**
+Handler, Looper
+*/
+        mWorkerThread = MyWorkerThread("myWorkerThread")
+        val task = Runnable {
+            for (i in 0..3) {
+                Log.e("!@#", "I: " + i + ". Thread: " + Thread.currentThread().name)
+                try {
+                    TimeUnit.SECONDS.sleep(2)
+                } catch (e: InterruptedException) {
+                    e.printStackTrace()
+                }
+                if (i == 2) {
+                    //in background thread
+                    Log.e("!@#", "I am at the middle of background task. Thread: " + Thread.currentThread().name)
+                    mUiHandler.post {
+                        //in ui thread
+                        Log.e("!@#", "I am at the middle of background task. Thread: " + Thread.currentThread().name)
+                        Toast.makeText(
+                            context,
+                            "I am at the middle of background task",
+                            Toast.LENGTH_LONG
+                        )
+                            .show()
+                    }
+                }
+            }
+            mUiHandler.post {
+                Log.e("!@#", "Background task is completed. Thread: " + Thread.currentThread().name)
+                Toast.makeText(
+                    context,
+                    "Background task is completed",
+                    Toast.LENGTH_LONG
+                )
+                    .show()
+            }
+        }
+        mWorkerThread.start()
+        mWorkerThread.prepareHandler()
+        mWorkerThread.postTask(task)
+        mWorkerThread.postTask(task)
+        mWorkerThread.postTask(task)
 
     }
 
