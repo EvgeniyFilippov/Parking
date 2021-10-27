@@ -7,9 +7,9 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/mapView"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:name="com.google.android.gms.maps.SupportMapFragment"/>
+        android:layout_height="match_parent" />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -53,5 +53,15 @@
         android:padding="3dp"
         android:background="@color/white"
         android:textSize="24sp"/>
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/compass_view"
+        android:src="@drawable/ic_baseline_arrow_upward_24"
+        android:layout_above="@id/btn_reset_location"
+        android:layout_marginBottom="20dp"
+        android:layout_centerHorizontal="true"
+        />
 
 </RelativeLayout>

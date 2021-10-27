@@ -6,7 +6,9 @@ import android.app.AlarmManager
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Context.SENSOR_SERVICE
 import android.content.Intent
+import android.hardware.*
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
@@ -28,8 +30,16 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import timber.log.Timber
+import androidx.core.content.ContextCompat.getSystemService
+import android.view.animation.Animation
 
-open class StartFragment : Fragment(), OnMapReadyCallback {
+import android.view.animation.RotateAnimation
+import android.widget.ImageView
+import androidx.appcompat.widget.AppCompatImageView
+import kotlin.math.roundToInt
+
+
+open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
 
     private var binding: FragmentStartBinding? = null
     var mapFragment: SupportMapFragment?= null
@@ -40,6 +50,13 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private var distance = 0
+    private var image: AppCompatImageView? = null
+
+    private var mSensorManager: SensorManager? = null
+    private var currentDegree = 0f
+    private var geoField: GeomagneticField  = GeomagneticField(
+        parkingLocation.latitude.toFloat(), parkingLocation.longitude.toFloat(),
+        parkingLocation.altitude.toFloat(), System.currentTimeMillis() )
 
     private val singlePermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -61,12 +78,14 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
+        mSensorManager = activity?.getSystemService(SENSOR_SERVICE) as SensorManager?
+
         locationRequest = LocationRequest.create().apply {
             interval = 3000
             fastestInterval = 2000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             maxWaitTime = 5000
-            smallestDisplacement = 0f
+            smallestDisplacement = 3f
         }
 
         //location callback
@@ -125,24 +144,26 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
 
         this.context?.startForegroundService(Intent(this.context, ParkingService::class.java))
 
-    }
-
-
-    @SuppressLint("MissingPermission")
-    open fun showUserLocationOnMap() {
-
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location : Location? ->
-                Timber.e("Last location is: $location. Current thread: ${Thread.currentThread().name}")
-                binding?.locationView?.text = getString(
-                    R.string.current_location_message,
-                    location?.latitude.toString(),
-                    location?.longitude.toString()
-                )
-                mCurrentLocation = location
-            }
+        image = binding?.compassView
 
     }
+
+
+//    @SuppressLint("MissingPermission")
+//    open fun showUserLocationOnMap() {
+//
+//        fusedLocationClient.lastLocation
+//            .addOnSuccessListener { location : Location? ->
+//                Timber.e("Last location is: $location. Current thread: ${Thread.currentThread().name}")
+//                binding?.locationView?.text = getString(
+//                    R.string.current_location_message,
+//                    location?.latitude.toString(),
+//                    location?.longitude.toString()
+//                )
+//                mCurrentLocation = location
+//            }
+//
+//    }
 
     //get location
     @SuppressLint("MissingPermission")
@@ -206,11 +227,14 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
     override fun onPause() {
         super.onPause()
         stopLocationUpdates()
+        mSensorManager?.unregisterListener(this)
     }
 
     override fun onResume() {
         super.onResume()
         startLocationUpdates()
+        mSensorManager?.registerListener(this, mSensorManager!!.getDefaultSensor(Sensor.TYPE_ORIENTATION),
+            SensorManager.SENSOR_DELAY_GAME);
     }
 
     override fun onDestroy() {
@@ -220,6 +244,57 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
 
     private fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        var degree = event?.values?.let { it[0].roundToInt().toFloat() }
+        degree = degree?.plus(geoField.declination)
+
+        val bearing: Float? = mCurrentLocation?.bearingTo(parkingLocation)
+        if (bearing != null) {
+            degree = (bearing - degree!!) * -1
+        }
+        degree = degree?.let { normalizeDegree(it) }
+
+//        tvHeading.setText("Heading: " + java.lang.Float.toString(degree) + " degrees")
+
+        // create a rotation animation (reverse turn degree degrees)
+        val ra = RotateAnimation(
+            currentDegree,
+            -degree!!,
+            Animation.RELATIVE_TO_SELF, 0.5f,
+            Animation.RELATIVE_TO_SELF,
+            0.5f
+        )
+
+        // how long the animation will take place
+
+        // how long the animation will take place
+        ra.duration = 210
+
+        // set the animation after the end of the reservation status
+
+        // set the animation after the end of the reservation status
+        ra.fillAfter = true
+
+        // Start the animation
+
+        // Start the animation
+        image?.startAnimation(ra)
+        currentDegree = -degree
+    }
+
+    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+        //not use
+
+    }
+
+    private fun normalizeDegree(value: Float): Float {
+        return if (value in 0.0f..180.0f) {
+            value
+        } else {
+            180 + (180 + value)
+        }
     }
 
 }
