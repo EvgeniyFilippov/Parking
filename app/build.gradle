@@ -76,4 +76,7 @@ dependencies {
 
     // optional - Multiprocess support
     implementation "androidx.work:work-multiprocess:$work_version"
+
+    //logger
+    implementation 'com.jakewharton.timber:timber:5.0.1'
 }

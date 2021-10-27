@@ -27,6 +27,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import timber.log.Timber
 
 open class StartFragment : Fragment(), OnMapReadyCallback {
 
@@ -72,17 +73,19 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
       locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
-                for (location in locationResult.locations){
-                    Log.e("!@#","locationCallback." + Thread.currentThread().name)
+                for (location in locationResult.locations) {
+                    Timber.i("locationCallback." + Thread.currentThread().name)
                     mCurrentLocation = location
 
-                    binding?.locationView?.text = getString(R.string.current_location_message,
+                    binding?.locationView?.text = getString(
+                        R.string.current_location_message,
                         location?.latitude.toString(),
-                        location?.longitude.toString())
+                        location?.longitude.toString()
+                    )
                     distance = location.distanceTo(parkingLocation).toInt()
                     binding?.distanceView?.text = distance.toString()
 
-                    Log.e("!@#", "User location: $locationResult. Current thread: ${Thread.currentThread().name}")
+                    Timber.e("User location: " + locationResult + ". Current thread: " + Thread.currentThread().name)
                 }
             }
         }
@@ -130,10 +133,12 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
 
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location : Location? ->
-                Log.e("!@#", "Last location is: $location. Current thread: ${Thread.currentThread().name}" )
-                binding?.locationView?.text = getString(R.string.current_location_message,
+                Timber.e("Last location is: $location. Current thread: ${Thread.currentThread().name}")
+                binding?.locationView?.text = getString(
+                    R.string.current_location_message,
                     location?.latitude.toString(),
-                    location?.longitude.toString())
+                    location?.longitude.toString()
+                )
                 mCurrentLocation = location
             }
 
@@ -142,10 +147,12 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
     //get location
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-        Log.e("!@#","startLocationUpdates method")
-        fusedLocationClient.requestLocationUpdates(locationRequest,
+        Timber.e("startLocationUpdates method")
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
             locationCallback,
-            Looper.getMainLooper())
+            Looper.getMainLooper()
+        )
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -168,7 +175,7 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
             ?.apply { putFloat("KEY_PARKING_LATITUDE", parkingLocation.latitude.toFloat()) }
             ?.apply { putFloat("KEY_PARKING_LONGITUDE", parkingLocation.longitude.toFloat()) }
             ?.apply()
-        Log.e("!@#", "Parking location is: $parkingLocation")
+        Timber.e("Parking location is: $parkingLocation")
     }
 
     private fun readParkingLocation() {
