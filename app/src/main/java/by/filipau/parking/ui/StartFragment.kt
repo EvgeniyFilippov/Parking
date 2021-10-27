@@ -2,7 +2,11 @@ package by.filipau.parking.ui
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.Notification
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
@@ -15,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import by.filipau.parking.R
 import by.filipau.parking.databinding.FragmentStartBinding
+import by.filipau.parking.service.ParkingService
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -22,9 +27,9 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PolylineOptions
+import timber.log.Timber
 
-class StartFragment : Fragment(), OnMapReadyCallback {
+open class StartFragment : Fragment(), OnMapReadyCallback {
 
     private var binding: FragmentStartBinding? = null
     var mapFragment: SupportMapFragment?= null
@@ -36,12 +41,11 @@ class StartFragment : Fragment(), OnMapReadyCallback {
     private lateinit var locationCallback: LocationCallback
     private var distance = 0
 
-
     private val singlePermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             when {
                 granted -> {
-                    showUserLocationOnMap()
+//                    showUserLocationOnMap()
                 }
                 !shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION) -> {
 
@@ -54,6 +58,7 @@ class StartFragment : Fragment(), OnMapReadyCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
         locationRequest = LocationRequest.create().apply {
@@ -61,29 +66,26 @@ class StartFragment : Fragment(), OnMapReadyCallback {
             fastestInterval = 2000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             maxWaitTime = 5000
-            smallestDisplacement = 5F
+            smallestDisplacement = 0f
         }
 
-
+        //location callback
       locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
-                for (location in locationResult.locations){
+                for (location in locationResult.locations) {
+                    Timber.d("locationCallback." + Thread.currentThread().name)
                     mCurrentLocation = location
 
-                    binding?.locationView?.text = getString(R.string.current_location_message,
+                    binding?.locationView?.text = getString(
+                        R.string.current_location_message,
                         location?.latitude.toString(),
-                        location?.longitude.toString())
+                        location?.longitude.toString()
+                    )
                     distance = location.distanceTo(parkingLocation).toInt()
                     binding?.distanceView?.text = distance.toString()
 
-//                    val polylineOptions = PolylineOptions()
-//                        .add(LatLng(location.latitude, location.longitude))
-//                        .add(LatLng(parkingLocation.latitude, parkingLocation.longitude))
-//
-//                    map.addPolyline(polylineOptions)
-
-                    Log.e("!@#", locationResult.toString())
+                    Timber.e("User location: " + locationResult + ". Current thread: " + Thread.currentThread().name)
                 }
             }
         }
@@ -121,28 +123,36 @@ class StartFragment : Fragment(), OnMapReadyCallback {
             map.clear()
         }
 
+        this.context?.startForegroundService(Intent(this.context, ParkingService::class.java))
+
     }
 
 
     @SuppressLint("MissingPermission")
-    private fun showUserLocationOnMap() {
+    open fun showUserLocationOnMap() {
 
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location : Location? ->
-                Log.e("!@#", "Location is: $location" )
-                binding?.locationView?.text = getString(R.string.current_location_message,
+                Timber.e("Last location is: $location. Current thread: ${Thread.currentThread().name}")
+                binding?.locationView?.text = getString(
+                    R.string.current_location_message,
                     location?.latitude.toString(),
-                    location?.longitude.toString())
+                    location?.longitude.toString()
+                )
                 mCurrentLocation = location
             }
 
     }
 
+    //get location
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-        fusedLocationClient.requestLocationUpdates(locationRequest,
+        Timber.e("startLocationUpdates method")
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
             locationCallback,
-            Looper.getMainLooper())
+            Looper.getMainLooper()
+        )
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -165,7 +175,7 @@ class StartFragment : Fragment(), OnMapReadyCallback {
             ?.apply { putFloat("KEY_PARKING_LATITUDE", parkingLocation.latitude.toFloat()) }
             ?.apply { putFloat("KEY_PARKING_LONGITUDE", parkingLocation.longitude.toFloat()) }
             ?.apply()
-        Log.e("!@#", "Parking location is: $parkingLocation")
+        Timber.e("Parking location is: $parkingLocation")
     }
 
     private fun readParkingLocation() {
