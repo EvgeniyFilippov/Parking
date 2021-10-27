@@ -74,7 +74,7 @@ open class StartFragment : Fragment(), OnMapReadyCallback {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
                 for (location in locationResult.locations) {
-                    Timber.i("locationCallback." + Thread.currentThread().name)
+                    Timber.d("locationCallback." + Thread.currentThread().name)
                     mCurrentLocation = location
 
                     binding?.locationView?.text = getString(
