@@ -85,7 +85,7 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
             fastestInterval = 2000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             maxWaitTime = 5000
-            smallestDisplacement = 3f
+            smallestDisplacement = 1f
         }
 
         //location callback
