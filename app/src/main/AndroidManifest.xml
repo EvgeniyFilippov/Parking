@@ -5,7 +5,6 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
@@ -31,13 +30,6 @@
             </intent-filter>
 
         </activity>
-
-        <service
-            android:name=".service.ParkingService"
-            android:enabled="true"
-            android:exported="true"
-            android:foregroundServiceType="location"
-            android:stopWithTask="true"/>
 
     </application>
 

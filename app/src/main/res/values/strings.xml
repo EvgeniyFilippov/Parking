@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">Parking</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="save_location">save parking point</string>
-    <string name="reset_location">delete parking point location</string>
+    <string name="save_location">save parking location</string>
+    <string name="reset_location">delete parking location</string>
     <string name="current_location_message">%1$s, %2$s</string>
+    <string name="location_alert_text_body">To continue using the application, enable location detection in the settings of your phone.</string>
+    <string name="alert_title">Error</string>
+    <string name="OK">OK</string>
 </resources>

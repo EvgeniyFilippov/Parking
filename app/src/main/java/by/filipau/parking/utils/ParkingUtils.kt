@@ -1,17 +1,15 @@
 package by.filipau.parking.utils
 
-import android.content.Context
-import android.provider.Settings.Global.putFloat
-import android.util.Log
+import android.app.Activity
+import android.app.AlertDialog
+import by.filipau.parking.R
 
-//private fun saveParkingLocation() {
-//    parkingLocation.latitude = mCurrentLocation?.latitude ?: 0.0
-//    parkingLocation.longitude = mCurrentLocation?.longitude ?: 0.0
-//
-//    activity?.getSharedPreferences("data", Context.MODE_PRIVATE)
-//        ?.edit()
-//        ?.apply { putFloat("KEY_PARKING_LATITUDE", parkingLocation.latitude.toFloat()) }
-//        ?.apply { putFloat("KEY_PARKING_LONGITUDE", parkingLocation.longitude.toFloat()) }
-//        ?.apply()
-//    Log.e("!@#", "Parking location is: $parkingLocation")
-//}
+fun Activity.showAlertDialogWithMessage(message: String) {
+    val alertDialog = AlertDialog.Builder(this)
+        .setTitle(getString(R.string.alert_title))
+        .setMessage(message)
+        .setPositiveButton(getString(R.string.OK)) { dialog, _ ->
+            dialog.dismiss()
+        }
+    alertDialog?.show()
+}
