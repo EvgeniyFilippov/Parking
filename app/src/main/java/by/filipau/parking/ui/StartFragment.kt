@@ -1,9 +1,11 @@
 package by.filipau.parking.ui
 
+import android.Manifest
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.SENSOR_SERVICE
+import android.content.pm.PackageManager
 import android.hardware.*
 import android.location.Location
 import android.location.LocationManager
@@ -16,6 +18,7 @@ import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import by.filipau.parking.R
 import by.filipau.parking.databinding.FragmentStartBinding
@@ -34,7 +37,7 @@ import kotlin.math.roundToInt
 open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
 
     private var binding: FragmentStartBinding? = null
-    var mapFragment: SupportMapFragment?= null
+    var mapFragment: SupportMapFragment? = null
     private var mCurrentLocation: Location? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var parkingLocation = Location(LocationManager.NETWORK_PROVIDER)
@@ -50,16 +53,17 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
 
     private var mSensorManager: SensorManager? = null
     private var currentDegree = 0f
-    private var geoField: GeomagneticField  = GeomagneticField(
+    private var geoField: GeomagneticField = GeomagneticField(
         parkingLocation.latitude.toFloat(), parkingLocation.longitude.toFloat(),
-        parkingLocation.altitude.toFloat(), System.currentTimeMillis() )
+        parkingLocation.altitude.toFloat(), System.currentTimeMillis()
+    )
 
     @SuppressLint("MissingPermission")
     private val singlePermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             when {
                 granted -> {
-//                        map.isMyLocationEnabled = true
+
                     Timber.d("Location permission granted")
                 }
                 !shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION) -> {
@@ -89,7 +93,7 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
         lm = context?.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
         //location callback
-      locationCallback = object : LocationCallback() {
+        locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
                 for (location in locationResult.locations) {
@@ -105,9 +109,11 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
                     if (distance > 1000) {
                         val km = (distance / 1000)
                         val meters = distance - (km * 1000)
-                        binding?.distanceView?.text = getString(R.string.distance_more_than_1000, km, meters)
+                        binding?.distanceView?.text =
+                            getString(R.string.distance_more_than_1000, km, meters)
                     } else {
-                        binding?.distanceView?.text =getString(R.string.distance_less_than_1000, distance)
+                        binding?.distanceView?.text =
+                            getString(R.string.distance_less_than_1000, distance)
                     }
 
                     Timber.e("User location: " + locationResult + ". Current thread: " + Thread.currentThread().name)
@@ -144,7 +150,7 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
         binding?.btnSaveLocation?.setOnClickListener {
             map.clear()
             saveParkingLocation()
-            map.addParkingMarker(parkingLocation.latitude,parkingLocation.longitude)
+            map.addParkingMarker(parkingLocation.latitude, parkingLocation.longitude)
         }
 
         binding?.btnResetLocation?.setOnClickListener {
@@ -189,6 +195,22 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
     override fun onMapReady(googleMap: GoogleMap) {
         readParkingLocation()
         map = googleMap
+
+        context?.let {
+            if (ContextCompat.checkSelfPermission(
+                    it, ACCESS_FINE_LOCATION
+                )
+                == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(
+                    it,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                map.isMyLocationEnabled = true
+                map.uiSettings.isMyLocationButtonEnabled = true
+            }
+        }
+
         if (parkingLocation.latitude != 0.0 && parkingLocation.longitude != 0.0) {
             googleMap.addParkingMarker(parkingLocation.latitude, parkingLocation.longitude)
         } else {
@@ -244,8 +266,10 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
         super.onResume()
         requestingLocationUpdates()
         startLocationUpdates()
-        mSensorManager?.registerListener(this, mSensorManager!!.getDefaultSensor(Sensor.TYPE_ORIENTATION),
-            SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager?.registerListener(
+            this, mSensorManager!!.getDefaultSensor(Sensor.TYPE_ORIENTATION),
+            SensorManager.SENSOR_DELAY_GAME
+        );
     }
 
     override fun onDestroy() {
@@ -311,17 +335,17 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
     private fun requestingLocationUpdates() {
         try {
             gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             Timber.d("Error check gps")
         }
 
         try {
             network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             Timber.d("Error check network")
         }
 
-        if(!gps_enabled && !network_enabled) {
+        if (!gps_enabled && !network_enabled) {
             Timber.d("Gps off")
         }
     }
