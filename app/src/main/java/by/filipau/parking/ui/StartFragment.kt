@@ -161,8 +161,10 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
             map.addParkingMarker(parkingLocation.latitude, parkingLocation.longitude)
         }
 
-        binding?.btnResetLocation?.setOnClickListener {
-            map.clear()
+        binding?.btnShowSavedLocation?.setOnClickListener {
+//            map.clear()
+            val yourLocation = CameraUpdateFactory.newLatLngZoom(LatLng(parkingLocation.latitude, parkingLocation.longitude), map.maxZoomLevel)
+            map.animateCamera(yourLocation)
         }
 
 

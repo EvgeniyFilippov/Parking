@@ -16,16 +16,17 @@
         android:id="@+id/btn_save_location"
         android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
+        android:backgroundTint="@color/green_button"
         android:text="@string/save_location"
         android:layout_marginBottom="30dp" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/btn_reset_location"
+        android:id="@+id/btn_show_saved_location"
         android:layout_centerHorizontal="true"
         android:layout_above="@id/btn_save_location"
-        android:text="@string/reset_location"
+        android:text="@string/show_saved_location"
         android:layout_marginBottom="20dp"
         />
 
@@ -33,7 +34,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/locationView"
-        android:text="Точность: -"
+        android:text="@string/accuracy_position"
         android:layout_alignParentLeft="true"
         android:layout_marginTop="20dp"
         android:layout_marginStart="30dp"
@@ -46,7 +47,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/distanceView"
         android:layout_alignParentLeft="true"
-        android:text="NO DISTANCE"
+        android:text="@string/no_distance"
         android:layout_below="@id/locationView"
         android:layout_marginTop="20dp"
         android:layout_marginStart="30dp"
@@ -59,7 +60,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/compass_view"
         android:src="@drawable/ic_baseline_arrow_upward_24"
-        android:layout_above="@id/btn_reset_location"
+        android:layout_above="@id/btn_show_saved_location"
         android:layout_marginBottom="20dp"
         android:layout_centerHorizontal="true"
         />
