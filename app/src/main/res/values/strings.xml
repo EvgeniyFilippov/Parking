@@ -1,12 +1,15 @@
 <resources>
     <string name="app_name">Parking</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="save_location">save parking location</string>
-    <string name="reset_location">delete parking location</string>
+    <string name="save_location">Запомнить место</string>
+    <string name="show_saved_location">Показать сохраненное место</string>
     <string name="current_location_message">Точность: %1$s м.</string>
     <string name="location_alert_text_body">To continue using the application, enable location detection in the settings of your phone.</string>
     <string name="alert_title">Error</string>
     <string name="distance_more_than_1000">Расстояние: %1$d км, %2$d м.</string>
     <string name="distance_less_than_1000">Расстояние: %1$d м.</string>
     <string name="OK">OK</string>
+    <string name="default_dash">нет сохраненного места</string>
+    <string name="no_distance">NO DISTANCE</string>
+    <string name="accuracy_position">Определяю позицию...</string>
 </resources>
