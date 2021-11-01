@@ -103,17 +103,25 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
 
                     binding?.locationView?.text = getString(
                         R.string.current_location_message,
-                        location?.accuracy.toString()
+                        location?.accuracy?.toInt().toString()
                     )
-                    distance = location.distanceTo(parkingLocation).toInt()
-                    if (distance > 1000) {
+                    distance =
+                        if (parkingLocation.longitude == 0.0 && parkingLocation.latitude == 0.0) {
+                            55555 // несуществующее расстояние
+                        } else {
+                            location.distanceTo(parkingLocation).toInt()
+                        }
+                    if (distance > 1000 && distance != 55555) {
                         val km = (distance / 1000)
                         val meters = distance - (km * 1000)
                         binding?.distanceView?.text =
                             getString(R.string.distance_more_than_1000, km, meters)
-                    } else {
+                    } else if (distance != 55555) {
                         binding?.distanceView?.text =
                             getString(R.string.distance_less_than_1000, distance)
+                    } else {
+                        binding?.distanceView?.text =
+                            getString(R.string.default_dash)
                     }
 
                     Timber.e("User location: " + locationResult + ". Current thread: " + Thread.currentThread().name)
