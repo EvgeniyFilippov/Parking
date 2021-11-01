@@ -2,28 +2,24 @@ package by.filipau.parking.ui
 
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
-import android.app.AlarmManager
-import android.app.AlertDialog
-import android.app.Notification
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Context.SENSOR_SERVICE
-import android.content.DialogInterface
-import android.content.Intent
 import android.hardware.*
 import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.RotateAnimation
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.fragment.app.Fragment
 import by.filipau.parking.R
 import by.filipau.parking.databinding.FragmentStartBinding
-
+import by.filipau.parking.utils.showAlertDialogWithMessage
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -32,13 +28,6 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import timber.log.Timber
-import androidx.core.content.ContextCompat.getSystemService
-import android.view.animation.Animation
-
-import android.view.animation.RotateAnimation
-import android.widget.ImageView
-import androidx.appcompat.widget.AppCompatImageView
-import by.filipau.parking.utils.showAlertDialogWithMessage
 import kotlin.math.roundToInt
 
 
@@ -65,18 +54,19 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
         parkingLocation.latitude.toFloat(), parkingLocation.longitude.toFloat(),
         parkingLocation.altitude.toFloat(), System.currentTimeMillis() )
 
+    @SuppressLint("MissingPermission")
     private val singlePermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             when {
                 granted -> {
-//                    showUserLocationOnMap()
+//                        map.isMyLocationEnabled = true
                     Timber.d("Location permission granted")
                 }
                 !shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION) -> {
                     Timber.d("Request permission rationale")
                 }
                 else -> {
-
+                    activity?.showAlertDialogWithMessage(getString(R.string.location_alert_text_body))
                 }
             }
         }
@@ -109,11 +99,16 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
 
                     binding?.locationView?.text = getString(
                         R.string.current_location_message,
-                        location?.latitude.toString(),
-                        location?.longitude.toString()
+                        location?.accuracy.toString()
                     )
                     distance = location.distanceTo(parkingLocation).toInt()
-                    binding?.distanceView?.text = distance.toString()
+                    if (distance > 1000) {
+                        val km = (distance / 1000)
+                        val meters = distance - (km * 1000)
+                        binding?.distanceView?.text = getString(R.string.distance_more_than_1000, km, meters)
+                    } else {
+                        binding?.distanceView?.text =getString(R.string.distance_less_than_1000, distance)
+                    }
 
                     Timber.e("User location: " + locationResult + ". Current thread: " + Thread.currentThread().name)
                 }
@@ -136,6 +131,7 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
         super.onViewCreated(view, savedInstanceState)
 
         if (shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION)) {
+            //если приложение уже раньше запрашивало пермишены, но пользователь его отклонил
             activity?.showAlertDialogWithMessage(getString(R.string.location_alert_text_body))
             Timber.d("Should show rationale")
 
@@ -193,7 +189,6 @@ open class StartFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
     override fun onMapReady(googleMap: GoogleMap) {
         readParkingLocation()
         map = googleMap
-//        map.isMyLocationEnabled = true
         if (parkingLocation.latitude != 0.0 && parkingLocation.longitude != 0.0) {
             googleMap.addParkingMarker(parkingLocation.latitude, parkingLocation.longitude)
         } else {
